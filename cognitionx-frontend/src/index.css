@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-clinical-navy: #0A192F;
+  --color-clinical-blue: #112240;
+  --color-clinical-accent: #4CC9F0;
+  --color-clinical-text-primary: #CCD6F6;
+  --color-clinical-text-secondary: #8892B0;
+  --color-clinical-white: #F8FAFC;
+  
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-clinical-navy text-clinical-text-primary antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-clinical-accent text-clinical-navy font-bold py-3 px-6 rounded-lg 
+           hover:bg-clinical-accent/90 transition-all transform hover:scale-105 
+           active:scale-95 shadow-lg shadow-clinical-accent/20;
+  }
+  
+  .card-clinical {
+    @apply bg-clinical-blue border border-clinical-text-secondary/20 rounded-xl p-6 shadow-xl;
+  }
+}

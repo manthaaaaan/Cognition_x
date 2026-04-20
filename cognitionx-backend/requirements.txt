@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+langchain
+langchain-google-genai
+python-dotenv
+reportlab
+qrcode
+pillow
+cryptography
+google-genai
+requests
+
