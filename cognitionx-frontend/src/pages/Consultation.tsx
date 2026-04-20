@@ -162,7 +162,24 @@ const Consultation: React.FC = () => {
       localStorage.setItem('last_soap_note', JSON.stringify(response.data));
     } catch (err) {
       console.error('Error processing audio:', err);
-      setError('Failed to process consultation. Please verify the backend is running at https://cognitionx-production.up.railway.app');
+      
+      if (axios.isAxiosError(err)) {
+        if (!err.response) {
+          // Network error or server unreachable
+          setError('Backend server is unavailable. Please check your connection.');
+        } else if (err.response.status === 500) {
+          const detail = err.response.data?.detail?.toLowerCase() || '';
+          if (detail.includes('no speech') || detail.includes('empty transcript') || detail.includes('no transcript')) {
+            setError('No audio detected. Please speak clearly during the consultation and try again.');
+          } else {
+            setError('Processing failed. Please try again.');
+          }
+        } else {
+          setError('Processing failed. Please try again.');
+        }
+      } else {
+        setError('Processing failed. Please try again.');
+      }
     } finally {
       setIsProcessing(false);
     }

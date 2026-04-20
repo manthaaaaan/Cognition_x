@@ -55,6 +55,9 @@ class ConsultationChain:
             ]
         )
         transcript = response.text
+        if not transcript or len(transcript.strip()) < 5:
+            # Raise exception that will be caught by the router and returned as a 500 with this detail
+            raise ValueError("No speech detected in audio or empty transcript.")
 
         # 2. Clinical Data Extraction (unchanged)
         extraction_llm = self.llm.with_structured_output(ClinicalFindings)
