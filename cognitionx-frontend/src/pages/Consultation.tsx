@@ -155,14 +155,14 @@ const Consultation: React.FC = () => {
     formData.append('audio_file', audioBlob, 'consultation.wav');
 
     try {
-      const response = await axios.post('http://localhost:8000/api/consultation/process', formData, {
+      const response = await axios.post('https://cognitionx-production.up.railway.app/api/consultation/process', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSoapNote(response.data);
       localStorage.setItem('last_soap_note', JSON.stringify(response.data));
     } catch (err) {
       console.error('Error processing audio:', err);
-      setError('Failed to process consultation. Please verify the backend is running at http://localhost:8000');
+      setError('Failed to process consultation. Please verify the backend is running at https://cognitionx-production.up.railway.app');
     } finally {
       setIsProcessing(false);
     }
