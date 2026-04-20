@@ -18,6 +18,13 @@ class MedicalMapping(BaseModel):
     icd10_codes: List[dict] = Field(description="List of ICD-10 codes with descriptions")
     drug_interactions: List[str] = Field(description="Potential drug-drug or drug-condition interactions")
 
+class ClinicalAnalysis(BaseModel):
+    drug_interaction_risk: str = Field(description="Risk level: SAFE, MODERATE, or HIGH")
+    interaction_details: str = Field(description="Detailed explanation of the interaction risks found")
+    alternative_medications: List[str] = Field(description="List of safer alternative medications if HIGH or MODERATE risk is found")
+    icd10_validation: str = Field(description="Validation status: VALID or MISMATCH")
+    icd10_notes: str = Field(description="Explanation of why the ICD-10 codes match or mismatch the diagnosis")
+
 class SOAPNote(BaseModel):
     subjective: str = Field(description="Patient's history, chief complaint, and symptoms")
     objective: str = Field(description="Physical examination and vitals")
@@ -28,6 +35,12 @@ class SOAPNote(BaseModel):
     patient_age: Optional[str] = Field(description="Extracted patient age if mentioned, else null")
     patient_sex: Optional[str] = Field(description="Extracted patient sex if mentioned, else null")
     vitals_string: Optional[str] = Field(description="Concatenated string of vitals (e.g. BP 120/80, Temp 101F), else null")
+    # Agent analysis fields
+    drug_interaction_risk: Optional[str] = Field(description="Risk level: SAFE, MODERATE, or HIGH")
+    interaction_details: Optional[str] = Field(description="Detailed explanation of the interaction risks found")
+    alternative_medications: Optional[List[str]] = Field(description="List of safer alternative medications if needed")
+    icd10_validation: Optional[str] = Field(description="Validation status: VALID or MISMATCH")
+    icd10_notes: Optional[str] = Field(description="Explanation of why the ICD-10 codes match or mismatch the diagnosis")
 
 class ConsultationChain:
     def __init__(self):
@@ -89,5 +102,32 @@ class ConsultationChain:
             "findings": findings.model_dump_json(),
             "mapping": mapping.model_dump_json()
         })
+
+        # 5. Autonomous Clinical Agent Analysis
+        agent_llm = self.llm.with_structured_output(ClinicalAnalysis)
+        agent_prompt = ChatPromptTemplate.from_template(
+            "You are an autonomous Clinical Safety Agent. Your task is to perform a high-fidelity audit of the consultation results.\n\n"
+            "INPUT DATA:\n"
+            "- SOAP Note: {soap_note}\n"
+            "- Medical Mapping (ICD-10): {mapping}\n\n"
+            "TASKS:\n"
+            "1. DRUG INTERACTION CHECK: Analyze all prescribed medications in the SOAP 'plan'. Flag risks as SAFE, MODERATE, or HIGH. "
+            "If MODERATE or HIGH, provide detailed reasoning and suggest SAFER ALTERNATIVES.\n"
+            "2. ICD-10 VALIDATION: Cross-check the ICD-10 codes in the mapping against the 'assessment' in the SOAP note. "
+            "Mark as VALID if they match, or MISMATCH if there is a discrepancy.\n\n"
+            "BE EXTREMELY PRECISE. YOUR ANALYSIS SAVES LIVES."
+        )
+        
+        analysis = await (agent_prompt | agent_llm).ainvoke({
+            "soap_note": soap_note.model_dump_json(),
+            "mapping": mapping.model_dump_json()
+        })
+
+        # Final merge: Add analysis results to the soap_note object
+        soap_note.drug_interaction_risk = analysis.drug_interaction_risk
+        soap_note.interaction_details = analysis.interaction_details
+        soap_note.alternative_medications = analysis.alternative_medications
+        soap_note.icd10_validation = analysis.icd10_validation
+        soap_note.icd10_notes = analysis.icd10_notes
 
         return soap_note

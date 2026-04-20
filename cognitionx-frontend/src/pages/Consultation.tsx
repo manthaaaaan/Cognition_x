@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Square, Loader2, ClipboardList, CheckCircle2, AlertCircle, ArrowRight, Activity, ChevronDown, UserPlus, Sparkles } from 'lucide-react';
+import { Mic, Square, Loader2, ClipboardList, CheckCircle2, AlertCircle, ArrowRight, Activity, ChevronDown, UserPlus, Sparkles, ShieldAlert, ShieldCheck, AlertTriangle, Pill, FileSearch, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
@@ -14,6 +14,12 @@ interface SOAPNote {
   patient_age?: string | null;
   patient_sex?: string | null;
   vitals_string?: string | null;
+  // Agent analysis fields
+  drug_interaction_risk?: string;
+  interaction_details?: string;
+  alternative_medications?: string[];
+  icd10_validation?: string;
+  icd10_notes?: string;
 }
 
 const MOCK_PATIENTS = [
@@ -399,6 +405,81 @@ const Consultation: React.FC = () => {
                       </motion.div>
                     ))}
                   </div>
+
+                  {/* AI Safety Audit Results */}
+                  {soapNote.drug_interaction_risk && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-8 space-y-6"
+                    >
+                      <div className="flex items-center gap-2 text-clinical-accent mb-2">
+                        <Activity className="w-5 h-5" />
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em]">Autonomous Safety Audit</h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Drug Interaction Card */}
+                        <div className="card-clinical bg-clinical-blue/30 border-clinical-accent/10 relative overflow-hidden">
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-clinical-text-secondary">Drug Interaction Risk</h3>
+                            {soapNote.drug_interaction_risk === 'SAFE' ? (
+                              <div className="bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1">
+                                <ShieldCheck className="w-3 h-3" /> SAFE
+                              </div>
+                            ) : soapNote.drug_interaction_risk === 'MODERATE' ? (
+                              <div className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" /> MODERATE RISK
+                              </div>
+                            ) : (
+                              <div className="bg-red-500/10 text-red-400 border border-red-500/30 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1">
+                                <ShieldAlert className="w-3 h-3" /> HIGH RISK
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-clinical-white text-xs leading-relaxed italic">
+                            {soapNote.interaction_details}
+                          </p>
+                        </div>
+
+                        {/* ICD-10 Validation Card */}
+                        <div className="card-clinical bg-clinical-blue/30 border-clinical-accent/10">
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-clinical-text-secondary">ICD-10 Validation</h3>
+                            {soapNote.icd10_validation === 'VALID' ? (
+                              <div className="text-green-400 text-[10px] font-black flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> VALIDATED
+                              </div>
+                            ) : (
+                              <div className="text-red-400 text-[10px] font-black flex items-center gap-1">
+                                <ShieldAlert className="w-3 h-3" /> CODE MISMATCH
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-clinical-white text-xs leading-relaxed">
+                            {soapNote.icd10_notes}
+                          </p>
+                        </div>
+
+                        {/* Alternative Medications (Conditional) */}
+                        {soapNote.alternative_medications && soapNote.alternative_medications.length > 0 && (
+                          <div className="md:col-span-2 card-clinical bg-clinical-accent/5 border-clinical-accent/20">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-clinical-accent mb-4 flex items-center gap-2">
+                              <Pill className="w-4 h-4" /> Recommended Safer Alternatives
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                              {soapNote.alternative_medications.map((med, i) => (
+                                <div key={i} className="bg-clinical-navy border border-clinical-accent/20 px-3 py-1.5 rounded-lg text-xs font-medium text-clinical-white flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 bg-clinical-accent rounded-full" />
+                                  {med}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
               ) : isProcessing ? (
                 <div className="h-[500px] flex flex-col items-center justify-center text-center space-y-4">
