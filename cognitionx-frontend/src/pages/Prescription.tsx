@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Download, Printer, User, Award, Calendar, CheckCircle, ChevronLeft, Loader2, Fingerprint, ShieldCheck, ShieldAlert, Lock, Clock, MessageSquare, Send } from 'lucide-react';
+import { FileText, Download, Printer, User, Award, Calendar, CheckCircle, ChevronLeft, Loader2, Fingerprint, ShieldCheck, ShieldAlert, Lock, Clock, MessageSquare, Send, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
@@ -21,6 +21,7 @@ const Prescription: React.FC = () => {
   const navigate = useNavigate();
 
   // Chat Assistant State
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
     {role: 'assistant', content: "Hello! I am your clinical RAG assistant. I've analyzed the patient's records. Do you have any questions about the diagnosis, dietary limits, or medication safety?"}
   ]);
@@ -495,14 +496,31 @@ const Prescription: React.FC = () => {
             )}
           </div>
 
-          {/* RAG Chat Assistant Card */}
-          <div className="card-clinical border-clinical-accent/30 space-y-4 flex flex-col" style={{ height: '500px' }}>
-            <h2 className="text-lg font-bold flex items-center gap-2 border-b border-clinical-navy/20 pb-3">
-              <MessageSquare className="w-5 h-5 text-clinical-accent" />
-              Clinical AI Assistant
-            </h2>
+
+        </div>
+      </div>
+
+      {/* Floating Chat UI */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-24 right-8 w-96 max-w-[90vw] bg-clinical-blue border border-clinical-accent/30 shadow-2xl shadow-clinical-accent/20 rounded-2xl overflow-hidden z-40 flex flex-col"
+            style={{ height: '500px' }}
+          >
+            <div className="bg-clinical-navy p-4 flex items-center justify-between border-b border-clinical-accent/20">
+              <h2 className="text-sm font-bold flex items-center gap-2 text-clinical-white">
+                <MessageSquare className="w-4 h-4 text-clinical-accent" />
+                Clinical AI Assistant
+              </h2>
+              <button onClick={() => setIsChatOpen(false)} className="text-clinical-text-secondary hover:text-clinical-accent transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             
-            <div className="flex-grow overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-clinical-accent/20">
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-clinical-accent/20">
               {messages.map((msg, idx) => (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -510,14 +528,14 @@ const Prescription: React.FC = () => {
                   key={idx}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`max-w-[85%] rounded-2xl p-3 text-sm ${msg.role === 'user' ? 'bg-clinical-accent text-clinical-navy font-medium rounded-tr-sm' : 'bg-clinical-navy/10 text-clinical-white border border-clinical-accent/20 rounded-tl-sm'}`}>
+                  <div className={`max-w-[85%] rounded-2xl p-3 text-sm ${msg.role === 'user' ? 'bg-clinical-accent text-clinical-navy font-medium rounded-tr-sm' : 'bg-clinical-navy/50 text-clinical-white border border-clinical-accent/20 rounded-tl-sm'}`}>
                     {msg.content}
                   </div>
                 </motion.div>
               ))}
               {isChatLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-clinical-navy/10 text-clinical-white border border-clinical-accent/20 rounded-2xl rounded-tl-sm p-3 flex gap-2 items-center">
+                  <div className="bg-clinical-navy/50 text-clinical-white border border-clinical-accent/20 rounded-2xl rounded-tl-sm p-3 flex gap-2 items-center">
                     <Loader2 className="w-4 h-4 animate-spin text-clinical-accent" />
                     <span className="text-xs text-clinical-text-secondary">Analyzing records...</span>
                   </div>
@@ -526,26 +544,36 @@ const Prescription: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="pt-2 border-t border-clinical-navy/20 flex gap-2">
+            <div className="p-3 bg-clinical-navy border-t border-clinical-accent/20 flex gap-2">
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask about diet, safety, meds..."
-                className="flex-grow bg-clinical-navy border border-clinical-accent/20 rounded-xl px-4 py-2 text-sm text-clinical-white focus:border-clinical-accent outline-none"
+                placeholder="Ask about diet, meds..."
+                className="flex-grow bg-clinical-blue/50 border border-clinical-accent/20 rounded-xl px-4 py-2 text-sm text-clinical-white focus:border-clinical-accent outline-none"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={isChatLoading || !chatInput.trim()}
-                className="bg-clinical-accent text-clinical-navy p-3 rounded-xl hover:bg-clinical-accent/90 disabled:opacity-50 transition-all flex items-center justify-center"
+                className="bg-clinical-accent text-clinical-navy p-2 rounded-xl hover:bg-clinical-accent/90 disabled:opacity-50 transition-all flex items-center justify-center"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Action Button */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-clinical-accent rounded-full shadow-[0_0_20px_rgba(0,255,157,0.4)] flex items-center justify-center text-clinical-navy z-50 hover:bg-clinical-white transition-colors"
+      >
+        {isChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+      </motion.button>
     </div>
   );
 };
