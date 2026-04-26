@@ -366,7 +366,7 @@ const Consultation: React.FC = () => {
   const handleSwap = (originalMed: string, alternative: string) => {
     if (!soapNote) return;
     const newMedName = alternative.split(' ')[0];
-    
+
     setSoapNote({
       ...soapNote,
       plan: soapNote.plan.replace(new RegExp(originalMed, 'gi'), newMedName),
@@ -724,20 +724,20 @@ const Consultation: React.FC = () => {
                                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
                                           {med}
                                         </div>
-                                        
+
                                         {swappedMeds[med] ? (
                                           <span className="text-green-400 text-xs font-bold flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded">
                                             <CheckCircle2 className="w-4 h-4" /> Swapped
                                           </span>
                                         ) : (
                                           <div className="relative">
-                                            <button 
+                                            <button
                                               onClick={() => setSwappingMed(swappingMed === med ? null : med)}
                                               className="bg-clinical-accent/20 text-clinical-accent text-xs font-bold px-3 py-1.5 rounded hover:bg-clinical-accent/30 transition-colors flex items-center gap-1"
                                             >
                                               ⇄ Swap
                                             </button>
-                                            
+
                                             {swappingMed === med && (
                                               <div className="absolute top-full left-0 mt-1 w-72 bg-clinical-navy border border-clinical-accent/30 rounded-lg shadow-xl z-20 p-1">
                                                 {soapNote.alternative_medications?.map((alt, i) => (
