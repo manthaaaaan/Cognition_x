@@ -171,9 +171,11 @@ const Consultation: React.FC = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const requestRef = useRef<number>();
+  const [audioLevel, setAudioLevel] = useState<number>(0);
   const navigate = useNavigate();
-
-
   useEffect(() => {
     if (role === 'doctor' && activeTab === 'field') {
       fetchFieldReports();
@@ -227,6 +229,26 @@ const Consultation: React.FC = () => {
       mediaRecorder.start();
       setIsRecording(true);
       setError(null);
+
+      // Start Audio Visualizer
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const analyser = audioCtx.createAnalyser();
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      
+      analyserRef.current = analyser;
+      audioContextRef.current = audioCtx;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const updateLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        setAudioLevel(average);
+        requestRef.current = requestAnimationFrame(updateLevel);
+      };
+      updateLevel();
+
       timerRef.current = window.setInterval(() => {
         // Timer running
       }, 1000);
@@ -241,6 +263,11 @@ const Consultation: React.FC = () => {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (audioContextRef.current?.state !== 'closed') {
+        audioContextRef.current?.close();
+      }
+      setAudioLevel(0);
     }
   };
 
@@ -415,9 +442,23 @@ const Consultation: React.FC = () => {
           {/* Left Column: Recording Controls */}
           <div className="lg:col-span-1 space-y-6">
             <div className="card-clinical flex flex-col items-center justify-center py-12 text-center border-dashed border-2 border-clinical-accent/20 relative">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 scale-110 ${isRecording ? 'bg-red-500/20 animate-pulse' : 'bg-clinical-accent/20'}`}>
+              <div 
+                className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-75 ${!isRecording ? 'bg-clinical-accent/20 scale-110' : ''}`}
+                style={isRecording ? { 
+                  transform: `scale(${1 + Math.min(audioLevel / 50, 0.5)})`,
+                  backgroundColor: `rgba(239, 68, 68, ${0.2 + Math.min(audioLevel / 150, 0.4)})`
+                } : {}}
+              >
                 {isRecording ? (
-                  <div className="w-12 h-12 bg-red-500 rounded-lg animate-pulse" />
+                  <div 
+                    className="w-12 h-12 bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-all duration-75 flex items-center justify-center" 
+                    style={{
+                      transform: `scale(${1 + Math.min(audioLevel / 80, 0.3)})`,
+                      borderRadius: `${Math.max(20, 50 - (audioLevel / 2))}%`
+                    }}
+                  >
+                    {audioLevel > 10 && <Mic className="w-6 h-6 text-white opacity-80" />}
+                  </div>
                 ) : (
                   <Mic className="w-12 h-12 text-clinical-accent" />
                 )}

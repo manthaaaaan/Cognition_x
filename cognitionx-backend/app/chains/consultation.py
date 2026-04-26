@@ -51,7 +51,7 @@ class ConsultationChain:
         # Support both GOOGLE_API_KEY and GEMINI_API_KEY
         api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash", 
+            model="gemini-2.5-flash", 
             temperature=0,
             google_api_key=api_key
         )
@@ -65,7 +65,7 @@ class ConsultationChain:
         transcription_prompt = f"Transcribe this clinical consultation audio accurately. The primary language is likely {language_hint}. Identify the doctor and patient clearly."
         
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type),
                 types.Part.from_text(text=transcription_prompt)
