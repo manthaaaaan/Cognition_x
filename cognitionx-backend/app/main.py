@@ -7,6 +7,8 @@ import os
 load_dotenv()
 
 from app.routes.consultation import router as consultation_router
+from app.routes.translate import router as translate_router
+from app.routes.outbreak import router as outbreak_router
 
 app = FastAPI(title="CognitionX Backend")
 
@@ -26,6 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(consultation_router)
+app.include_router(translate_router)
+app.include_router(outbreak_router)
 
 @app.get("/")
 async def root():

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from app.chains.consultation import ConsultationChain
+from app.utils.firebase import save_anonymized_consultation, save_field_report, get_field_reports
 import shutil
 import os
 import uuid
@@ -8,7 +9,10 @@ router = APIRouter(prefix="/api/consultation", tags=["consultation"])
 consultation_chain = ConsultationChain()
 
 @router.post("/process")
-async def process_consultation(audio_file: UploadFile = File(...)):
+async def process_consultation(
+    audio_file: UploadFile = File(...),
+    language_hint: str = Form("Auto")
+):
     # 1. Save temporary file
     temp_dir = "temp_audio"
     os.makedirs(temp_dir, exist_ok=True)
@@ -21,8 +25,14 @@ async def process_consultation(audio_file: UploadFile = File(...)):
             shutil.copyfileobj(audio_file.file, buffer)
 
         # 2. Run the chain
-        soap_note = await consultation_chain.run(temp_path)
+        soap_note = await consultation_chain.run(temp_path, language_hint=language_hint)
         
+        # 3. Save anonymized data for outbreak detection
+        if soap_note.symptoms_list and soap_note.district:
+            save_anonymized_consultation(soap_note.symptoms_list, soap_note.district)
+        elif soap_note.symptoms_list:
+            save_anonymized_consultation(soap_note.symptoms_list, "Unknown")
+
         return soap_note
 
     except Exception as e:
@@ -39,3 +49,13 @@ async def process_consultation(audio_file: UploadFile = File(...)):
         except Exception as e:
             print(f"Warning: Could not delete temp file {temp_path}: {str(e)}")
             pass
+
+@router.post("/field-report")
+async def create_field_report(report: dict):
+    save_field_report(report)
+    return {"status": "success"}
+
+@router.get("/field-reports")
+async def fetch_field_reports():
+    reports = get_field_reports()
+    return reports

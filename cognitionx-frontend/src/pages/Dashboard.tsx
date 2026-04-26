@@ -4,6 +4,7 @@ import { Stethoscope, ShieldCheck, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Dashboard: React.FC = () => {
+  const [role, setRole] = useState<'doctor' | 'asha'>('doctor');
   const [name, setName] = useState('');
   const [medicalId, setMedicalId] = useState('');
   const [errors, setErrors] = useState({ name: false, medicalId: false });
@@ -17,9 +18,10 @@ const Dashboard: React.FC = () => {
     };
     setErrors(newErrors);
 
-    if (name && medicalId) {
+    if (name && (role === 'asha' || medicalId)) {
+      localStorage.setItem('user_role', role);
       localStorage.setItem('doctor_name', name);
-      localStorage.setItem('medical_id', medicalId);
+      localStorage.setItem('medical_id', medicalId || 'ASHA-' + Math.random().toString(36).substr(2, 5));
       navigate('/consultation');
     }
   };
@@ -38,6 +40,21 @@ const Dashboard: React.FC = () => {
           </div>
           <h1 className="text-3xl font-bold text-clinical-white tracking-tight">Cognition<span className="text-clinical-accent">X</span></h1>
           <p className="text-clinical-text-secondary mt-2">Intelligent Clinical Assistant</p>
+        </div>
+
+        <div className="flex gap-2 p-1 bg-clinical-navy rounded-xl mb-8 border border-clinical-text-secondary/20">
+          <button 
+            onClick={() => setRole('doctor')}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'doctor' ? 'bg-clinical-accent text-clinical-navy' : 'text-clinical-text-secondary hover:text-clinical-white'}`}
+          >
+            Doctor
+          </button>
+          <button 
+            onClick={() => setRole('asha')}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${role === 'asha' ? 'bg-clinical-accent text-clinical-navy' : 'text-clinical-text-secondary hover:text-clinical-white'}`}
+          >
+            ASHA Worker
+          </button>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6" noValidate>
@@ -62,27 +79,29 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-clinical-text-secondary mb-2 ml-1">
-              Medical Council ID
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={medicalId}
-                onChange={(e) => {
-                  setMedicalId(e.target.value);
-                  if (errors.medicalId) setErrors({...errors, medicalId: false});
-                }}
-                className={`w-full bg-clinical-navy border rounded-lg py-3 px-4 text-clinical-white focus:outline-none transition-all ${
-                  errors.medicalId ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-clinical-text-secondary/30 focus:border-clinical-accent'
-                }`}
-                placeholder="MCI-12345-REG"
-              />
-              <ShieldCheck className={`absolute right-3 top-3.5 w-5 h-5 transition-colors ${errors.medicalId ? 'text-red-500' : 'text-clinical-accent/50'}`} />
-              {errors.medicalId && <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold italic tracking-wide">Registration ID is required</p>}
+          {role === 'doctor' && (
+            <div>
+              <label className="block text-sm font-medium text-clinical-text-secondary mb-2 ml-1">
+                Medical Council ID
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={medicalId}
+                  onChange={(e) => {
+                    setMedicalId(e.target.value);
+                    if (errors.medicalId) setErrors({...errors, medicalId: false});
+                  }}
+                  className={`w-full bg-clinical-navy border rounded-lg py-3 px-4 text-clinical-white focus:outline-none transition-all ${
+                    errors.medicalId ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-clinical-text-secondary/30 focus:border-clinical-accent'
+                  }`}
+                  placeholder="MCI-12345-REG"
+                />
+                <ShieldCheck className={`absolute right-3 top-3.5 w-5 h-5 transition-colors ${errors.medicalId ? 'text-red-500' : 'text-clinical-accent/50'}`} />
+                {errors.medicalId && <p className="text-red-500 text-[10px] mt-1 ml-1 font-bold italic tracking-wide">Registration ID is required</p>}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-3">
             <button type="submit" className="w-full btn-primary flex items-center justify-center gap-2 group">
@@ -92,6 +111,16 @@ const Dashboard: React.FC = () => {
             <p className="text-[10px] text-clinical-text-secondary/60 text-center italic">
               🔬 Demo Mode: Enter any name and Medical Council ID to simulate a doctor login
             </p>
+            
+            <div className="pt-4 mt-4 border-t border-clinical-text-secondary/10 text-center">
+              <button 
+                onClick={() => navigate('/outbreak')}
+                className="text-xs font-bold text-clinical-accent hover:underline flex items-center justify-center gap-2 mx-auto"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                District Health Officer Portal
+              </button>
+            </div>
           </div>
         </form>
 

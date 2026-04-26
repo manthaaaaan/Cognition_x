@@ -10,4 +10,6 @@ pillow
 cryptography
 google-genai
 requests
+firebase-admin
+google-cloud-aiplatform
 

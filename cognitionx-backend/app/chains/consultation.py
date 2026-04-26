@@ -13,6 +13,8 @@ class ClinicalFindings(BaseModel):
     diagnosis: List[str] = Field(description="Potential or confirmed diagnoses")
     duration: str = Field(description="Duration of symptoms")
     vitals: dict = Field(description="Extracted vital signs (temp, bp, heart rate, etc.)")
+    district: Optional[str] = Field(description="District or region mentioned in the consultation")
+    primary_language: Optional[str] = Field(description="Detected primary language(s) or code-switching patterns")
 
 class MedicalMapping(BaseModel):
     icd10_codes: List[dict] = Field(description="List of ICD-10 codes with descriptions")
@@ -35,6 +37,8 @@ class SOAPNote(BaseModel):
     patient_age: Optional[str] = Field(description="Extracted patient age if mentioned, else null")
     patient_sex: Optional[str] = Field(description="Extracted patient sex if mentioned, else null")
     vitals_string: Optional[str] = Field(description="Concatenated string of vitals (e.g. BP 120/80, Temp 101F), else null")
+    district: Optional[str] = Field(description="Extracted district/region if mentioned, else null")
+    symptoms_list: Optional[List[str]] = Field(description="List of primary symptoms for anonymized aggregation")
     # Agent analysis fields
     drug_interaction_risk: Optional[str] = Field(description="Risk level: SAFE, MODERATE, or HIGH")
     interaction_details: Optional[str] = Field(description="Detailed explanation of the interaction risks found")
@@ -47,21 +51,21 @@ class ConsultationChain:
         # Support both GOOGLE_API_KEY and GEMINI_API_KEY
         api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash", 
+            model="gemini-2.0-flash", 
             temperature=0,
             google_api_key=api_key
         )
 
-    async def run(self, audio_path: str) -> SOAPNote:
+    async def run(self, audio_path: str, language_hint: str = "Auto") -> SOAPNote:
         # 1. Transcription (unchanged)
         uploaded_file = upload_to_gemini(audio_path)
         wait_for_files_active([uploaded_file])
 
         client = get_client()
-        transcription_prompt = "Transcribe this clinical consultation audio accurately. Identify the doctor and patient clearly."
+        transcription_prompt = f"Transcribe this clinical consultation audio accurately. The primary language is likely {language_hint}. Identify the doctor and patient clearly."
         
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=[
                 types.Part.from_uri(file_uri=uploaded_file.uri, mime_type="audio/wav"),
                 types.Part.from_text(text=transcription_prompt)
@@ -89,13 +93,26 @@ class ConsultationChain:
         # 4. SOAP Note Generation + Metadata Extraction
         soap_llm = self.llm.with_structured_output(SOAPNote)
         soap_prompt = ChatPromptTemplate.from_template(
-            "Generate a professional, structured SOAP note based on the transcript and findings provided.\n\n"
-            "ADDITIONALLY: Extract the patient's name, age, and sex if they were mentioned in the transcript. "
-            "Also extract all vital signs (BP, Temp, HR, etc.) into a concise vitals_string. "
+            "Generate a professional, structured SOAP note IN ENGLISH based on the conversation provided.\n\n"
+            "STEP 1: DIARIZE AND LABEL SPEAKERS\n"
+            "Carefully analyze the transcript. Based on medical terminology, clinical flow, and context, "
+            "internally label segments as [Doctor] or [Patient].\n\n"
+            "STEP 2: MULTILINGUAL UNDERSTANDING & CODE-SWITCHING\n"
+            "The conversation may contain code-switching between regional languages (Kannada, Hindi, Tamil, etc.) and English. "
+            "Gemini must natively understand all regional languages mentioned and produce a clean, accurate clinical summary IN ENGLISH. "
+            "Use the provided 'Hint Language' if it helps with initial detection.\n\n"
+            "STEP 3: EXTRACT METADATA\n"
+            "- Extract patient name, age, and sex.\n"
+            "- Identify the resident district/region.\n"
+            "- List concise primary symptoms in 'symptoms_list'.\n"
+            "- Format all vitals (BP, Temp, etc.) into 'vitals_string'.\n\n"
+            "STEP 3: GENERATE SOAP NOTE\n"
+            "Populate the subjective, objective, assessment, and plan fields. Use the identified speaker roles "
+            "to ensure the Patient's complaints are in Subjective and the Doctor's evaluations are in Objective/Assessment.\n\n"
             "If any field is not mentioned, return null for it.\n\n"
-            "Transcript: {transcript}\n\n"
-            "Findings: {findings}\n\n"
-            "Medical Mapping: {mapping}"
+            "Conversation Transcript: {transcript}\n\n"
+            "Initial Clinical Findings: {findings}\n\n"
+            "Medical Reference Data: {mapping}"
         )
         soap_note = await (soap_prompt | soap_llm).ainvoke({
             "transcript": transcript,
