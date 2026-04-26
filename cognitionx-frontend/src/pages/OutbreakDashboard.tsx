@@ -32,7 +32,7 @@ const OutbreakDashboard: React.FC = () => {
   const fetchOutbreakData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://cognitionx-production.up.railway.app/api/outbreak/analyze');
+      const response = await axios.get('http://localhost:8000/api/outbreak/analyze');
       setAlerts(response.data.alerts);
       setClusters(response.data.clusters);
     } catch (err) {

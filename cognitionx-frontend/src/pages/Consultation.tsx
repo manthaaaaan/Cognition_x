@@ -187,7 +187,7 @@ const Consultation: React.FC = () => {
 
   const fetchFieldReports = async () => {
     try {
-      const response = await axios.get('https://cognitionx-production.up.railway.app/api/consultation/field-reports');
+      const response = await axios.get('http://localhost:8000/api/consultation/field-reports');
       setFieldReports(response.data);
     } catch (err) {
       console.error('Error fetching field reports:', err);
@@ -326,7 +326,7 @@ const Consultation: React.FC = () => {
     formData.append('language_hint', selectedLanguage || 'Auto');
 
     try {
-      const response = await axios.post('https://cognitionx-production.up.railway.app/api/consultation/process', formData, {
+      const response = await axios.post('http://localhost:8000/api/consultation/process', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSoapNote(response.data);
@@ -372,7 +372,7 @@ const Consultation: React.FC = () => {
     }
 
     try {
-      await axios.post('https://cognitionx-production.up.railway.app/api/consultation/field-report', {
+      await axios.post('http://localhost:8000/api/consultation/field-report', {
         asha_name: doctorName,
         asha_id: localStorage.getItem('medical_id'),
         patient_name: soapNote.patient_name || "Unknown",
