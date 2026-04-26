@@ -6,6 +6,15 @@ import os
 # Load environment variables from .env file
 load_dotenv()
 
+# Handle Google Cloud Service Account JSON for Production (Railway)
+if "GOOGLE_APPLICATION_CREDENTIALS_JSON" in os.environ:
+    import tempfile
+    creds_json = os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
+    temp_creds_path = os.path.join(tempfile.gettempdir(), "gcp-key.json")
+    with open(temp_creds_path, "w") as f:
+        f.write(creds_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_creds_path
+
 from app.routes.consultation import router as consultation_router
 from app.routes.translate import router as translate_router
 from app.routes.outbreak import router as outbreak_router
