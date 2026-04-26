@@ -25,7 +25,7 @@ async def translate_turn(
             shutil.copyfileobj(audio_file.file, buffer)
             
         # 1. Upload to Gemini
-        uploaded_file = upload_to_gemini(temp_path)
+        uploaded_file = upload_to_gemini(temp_path, mime_type=audio_file.content_type)
         wait_for_files_active([uploaded_file])
         
         client = get_client()

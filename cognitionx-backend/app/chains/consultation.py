@@ -56,9 +56,9 @@ class ConsultationChain:
             google_api_key=api_key
         )
 
-    async def run(self, audio_path: str, language_hint: str = "Auto") -> SOAPNote:
+    async def run(self, audio_path: str, language_hint: str = "Auto", mime_type: str = None) -> SOAPNote:
         # 1. Transcription (unchanged)
-        uploaded_file = upload_to_gemini(audio_path)
+        uploaded_file = upload_to_gemini(audio_path, mime_type=mime_type)
         wait_for_files_active([uploaded_file])
 
         client = get_client()

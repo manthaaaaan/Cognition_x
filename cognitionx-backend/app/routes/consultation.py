@@ -25,7 +25,7 @@ async def process_consultation(
             shutil.copyfileobj(audio_file.file, buffer)
 
         # 2. Run the chain
-        soap_note = await consultation_chain.run(temp_path, language_hint=language_hint)
+        soap_note = await consultation_chain.run(temp_path, language_hint=language_hint, mime_type=audio_file.content_type)
         
         # 3. Save anonymized data for outbreak detection
         if soap_note.symptoms_list and soap_note.district:
