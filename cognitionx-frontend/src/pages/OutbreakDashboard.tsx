@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Map as MapIcon, Activity, AlertTriangle, ChevronLeft, Loader2, Info, Bell, Users, Clock } from 'lucide-react';
+import { ShieldAlert, Map as MapIcon, Activity, AlertTriangle, ChevronLeft, Loader2, Info, Bell, Users, Clock, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
@@ -23,7 +23,6 @@ const OutbreakDashboard: React.FC = () => {
   const [alerts, setAlerts] = useState<OutbreakAlert[]>([]);
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +37,6 @@ const OutbreakDashboard: React.FC = () => {
       setClusters(response.data.clusters);
     } catch (err) {
       console.error('Error fetching outbreak data:', err);
-      setError('Failed to fetch real-time outbreak data. Showing simulated results.');
       // Fallback mocks
       setAlerts([
         { district: 'Bangalore', disease: 'Dengue Fever', urgency: 'HIGH', reasoning: 'Spike in high fever and cluster of joint pain reports in the North district.', cases: 42 }

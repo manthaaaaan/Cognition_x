@@ -161,7 +161,6 @@ const Consultation: React.FC = () => {
   const [showMockMenu, setShowMockMenu] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>('Auto');
   const [translations, setTranslations] = useState<Translation[]>([]);
-  const [isTranslating, setIsTranslating] = useState(false);
   const [activeTab, setActiveTab] = useState<'current' | 'field' | 'feed'>(role === 'asha' ? 'current' : 'feed');
   const [fieldReports, setFieldReports] = useState<any[]>([]);
 
@@ -375,14 +374,6 @@ const Consultation: React.FC = () => {
     setSwappedMeds(prev => ({ ...prev, [originalMed]: alternative }));
     setSwappingMed(null);
   };
-
-  const languages = [
-    { name: 'Kannada', local: 'ಕನ್ನಡ', flag: '' },
-    { name: 'Hindi', local: 'हिंदी', flag: '' },
-    { name: 'Tamil', local: 'தமிழ்', flag: '' },
-    { name: 'English', local: 'English', flag: '' }
-  ];
-
 
   return (
     <div className="min-h-screen bg-clinical-navy p-6 md:p-8">
@@ -923,13 +914,6 @@ const Consultation: React.FC = () => {
                             </div>
                           </motion.div>
                         ))
-                      )}
-                      {isTranslating && (
-                        <div className="flex justify-start">
-                          <div className="bg-clinical-blue/50 border border-clinical-accent/10 p-4 rounded-2xl animate-pulse">
-                            <Loader2 className="w-4 h-4 animate-spin text-clinical-accent" />
-                          </div>
-                        </div>
                       )}
                     </div>
                   </div>
