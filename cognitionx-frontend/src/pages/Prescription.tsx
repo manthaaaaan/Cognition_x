@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Download, Printer, User, Award, Calendar, CheckCircle, ChevronLeft, Loader2, Fingerprint, ShieldCheck, ShieldAlert, Lock, Clock } from 'lucide-react';
+import { FileText, Download, Printer, User, Award, Calendar, CheckCircle, ChevronLeft, Loader2, Fingerprint, ShieldCheck, ShieldAlert, Lock, Clock, MessageSquare, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
@@ -18,6 +19,46 @@ const Prescription: React.FC = () => {
   const [enteredMcId, setEnteredMcId] = useState('');
   const [authTimestamp, setAuthTimestamp] = useState('');
   const navigate = useNavigate();
+
+  // Chat Assistant State
+  const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
+    {role: 'assistant', content: "Hello! I am your clinical RAG assistant. I've analyzed the patient's records. Do you have any questions about the diagnosis, dietary limits, or medication safety?"}
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+    
+    const userMessage = { role: 'user' as const, content: chatInput };
+    setMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/chat/', {
+        question: userMessage.content,
+        context: lastSoap,
+        history: messages.slice(1) // exclude initial greeting
+      });
+      
+      setMessages(prev => [...prev, { role: 'assistant', content: response.data.reply }]);
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I couldn't reach the backend server. Please make sure it is running locally on port 8000." }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   const doctorName = localStorage.getItem('doctor_name') || 'Dr. Rajesh Kumar';
   const medicalId = localStorage.getItem('medical_id') || 'MCI-12345-REG';
@@ -452,6 +493,56 @@ const Prescription: React.FC = () => {
                 </button>
               </motion.div>
             )}
+          </div>
+
+          {/* RAG Chat Assistant Card */}
+          <div className="card-clinical border-clinical-accent/30 space-y-4 flex flex-col" style={{ height: '500px' }}>
+            <h2 className="text-lg font-bold flex items-center gap-2 border-b border-clinical-navy/20 pb-3">
+              <MessageSquare className="w-5 h-5 text-clinical-accent" />
+              Clinical AI Assistant
+            </h2>
+            
+            <div className="flex-grow overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-clinical-accent/20">
+              {messages.map((msg, idx) => (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[85%] rounded-2xl p-3 text-sm ${msg.role === 'user' ? 'bg-clinical-accent text-clinical-navy font-medium rounded-tr-sm' : 'bg-clinical-navy/10 text-clinical-white border border-clinical-accent/20 rounded-tl-sm'}`}>
+                    {msg.content}
+                  </div>
+                </motion.div>
+              ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-clinical-navy/10 text-clinical-white border border-clinical-accent/20 rounded-2xl rounded-tl-sm p-3 flex gap-2 items-center">
+                    <Loader2 className="w-4 h-4 animate-spin text-clinical-accent" />
+                    <span className="text-xs text-clinical-text-secondary">Analyzing records...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="pt-2 border-t border-clinical-navy/20 flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                placeholder="Ask about diet, safety, meds..."
+                className="flex-grow bg-clinical-navy border border-clinical-accent/20 rounded-xl px-4 py-2 text-sm text-clinical-white focus:border-clinical-accent outline-none"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isChatLoading || !chatInput.trim()}
+                className="bg-clinical-accent text-clinical-navy p-3 rounded-xl hover:bg-clinical-accent/90 disabled:opacity-50 transition-all flex items-center justify-center"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
