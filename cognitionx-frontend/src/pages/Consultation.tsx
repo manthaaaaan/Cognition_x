@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Square, Loader2, ClipboardList, CheckCircle2, AlertCircle, ArrowRight, Activity, ChevronDown, UserPlus, Sparkles, ShieldAlert, ShieldCheck, AlertTriangle, Pill, FileSearch, Shield, Languages, Volume2, MessageSquare, History } from 'lucide-react';
+import { Mic, Square, Loader2, ClipboardList, CheckCircle2, AlertCircle, ArrowRight, Activity, ChevronDown, UserPlus, Sparkles, ShieldAlert, ShieldCheck, AlertTriangle, Pill, Languages, Volume2, MessageSquare, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 
@@ -154,7 +154,6 @@ const Consultation: React.FC = () => {
   const role = (localStorage.getItem('user_role') || 'doctor') as 'doctor' | 'asha';
 
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [soapNote, setSoapNote] = useState<SOAPNote | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -163,7 +162,6 @@ const Consultation: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>('Auto');
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [activeTurn, setActiveTurn] = useState<'patient' | 'doctor' | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'field' | 'feed'>(role === 'asha' ? 'current' : 'feed');
   const [fieldReports, setFieldReports] = useState<any[]>([]);
 
@@ -229,9 +227,8 @@ const Consultation: React.FC = () => {
       mediaRecorder.start();
       setIsRecording(true);
       setError(null);
-      setRecordingTime(0);
       timerRef.current = window.setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        // Timer running
       }, 1000);
     } catch (err) {
       console.error('Error accessing microphone:', err);
@@ -288,38 +285,6 @@ const Consultation: React.FC = () => {
         setIsDemoMode(true);
         setSoapNote(mock.soap);
       }, 1500);
-    }
-  };
-
-  const handleTranslation = async (audioBlob: Blob, role: 'patient' | 'doctor') => {
-    setIsTranslating(true);
-    const formData = new FormData();
-    formData.append('audio_file', audioBlob, 'turn.wav');
-    formData.append('role', role);
-    formData.append('target_lang', selectedLanguage || 'English');
-
-    try {
-      const response = await axios.post('https://cognitionx-production.up.railway.app/api/consultation/translate', formData);
-      const { translated_text, audio } = response.data;
-
-      setTranslations(prev => [...prev, {
-        role,
-        text: translated_text,
-        timestamp: new Date()
-      }]);
-
-      if (audio) {
-        const audioBlob = await (await fetch(`data:audio/wav;base64,${audio}`)).blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audioPlayer = new Audio(audioUrl);
-        audioPlayer.play();
-      }
-    } catch (err) {
-      console.error('Translation error:', err);
-      setError('Failed to translate turn. Please try again.');
-    } finally {
-      setIsTranslating(false);
-      setActiveTurn(null);
     }
   };
 
@@ -395,12 +360,6 @@ const Consultation: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const handleSwap = (originalMed: string, alternative: string) => {
