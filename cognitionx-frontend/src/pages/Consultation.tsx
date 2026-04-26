@@ -218,8 +218,9 @@ const Consultation: React.FC = () => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        processAudio(audioBlob);
+        const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        processAudio(audioBlob, mimeType);
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -287,13 +288,14 @@ const Consultation: React.FC = () => {
     }
   };
 
-  const processAudio = async (audioBlob: Blob) => {
+  const processAudio = async (audioBlob: Blob, mimeType: string = 'audio/webm') => {
     setIsProcessing(true);
     setSoapNote(null);
     setSwappedMeds({});
     setRiskyMeds([]);
     const formData = new FormData();
-    formData.append('audio_file', audioBlob, 'consultation.wav');
+    const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+    formData.append('audio_file', audioBlob, `consultation.${ext}`);
     formData.append('language_hint', selectedLanguage || 'Auto');
 
     try {

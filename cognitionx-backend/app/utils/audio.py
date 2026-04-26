@@ -11,11 +11,14 @@ API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 def get_client():
     return genai.Client(api_key=API_KEY)
 
-def upload_to_gemini(path, mime_type="audio/wav"):
-    """Uploads the given file to Gemini File API with explicit audio/wav mime type."""
+def upload_to_gemini(path, mime_type=None):
+    """Uploads the given file to Gemini File API."""
     client = get_client()
+    config = {}
+    if mime_type:
+        config["mime_type"] = mime_type
     with open(path, 'rb') as f:
-        file = client.files.upload(file=f, config={"mime_type": mime_type})
+        file = client.files.upload(file=f, config=config)
     print(f"Uploaded file '{file.display_name}' as: {file.uri}")
     return file
 
