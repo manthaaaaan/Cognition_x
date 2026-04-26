@@ -1,14 +1,17 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from langchain_google_vertexai import ChatVertexAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+import os
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 class ChatChain:
     def __init__(self):
-        # We use the same Vertex AI configuration for the chat assistant
-        self.llm = ChatVertexAI(
-            model_name="gemma2-9b-it",
+        # We use ChatGoogleGenerativeAI as configured in the consultation chain
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemma-2-9b-it",
+            api_key=api_key,
             temperature=0.3 # Slightly higher temperature for conversational tone
         )
         

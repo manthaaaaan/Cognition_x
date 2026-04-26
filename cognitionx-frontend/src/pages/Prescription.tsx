@@ -46,7 +46,8 @@ const Prescription: React.FC = () => {
     setIsChatLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/chat/', {
+      const API_URL = import.meta.env.DEV ? 'http://localhost:8000' : 'https://cognitionx-production.up.railway.app';
+      const response = await axios.post(`${API_URL}/api/chat/`, {
         question: userMessage.content,
         context: lastSoap,
         history: messages.slice(1) // exclude initial greeting
