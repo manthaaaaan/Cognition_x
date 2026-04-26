@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from langchain_google_vertexai import ChatVertexAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from google.genai import types
@@ -48,10 +48,12 @@ class SOAPNote(BaseModel):
 
 class ConsultationChain:
     def __init__(self):
-        # Vertex AI setup for Gemma. 
-        # Note: This requires GOOGLE_APPLICATION_CREDENTIALS and a configured Google Cloud Project ID.
-        self.llm = ChatVertexAI(
-            model_name="gemma2-9b-it", # Vertex AI model garden endpoint/name
+        # Update to use ChatGoogleGenerativeAI to resolve Vertex AI auth issues
+        # and comply with LangChain deprecation of ChatVertexAI.
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemma-2-9b-it", # Google GenAI Model name for Gemma 2
+            api_key=api_key,
             temperature=0
         )
 

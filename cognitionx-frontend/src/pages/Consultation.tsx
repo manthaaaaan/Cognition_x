@@ -173,7 +173,7 @@ const Consultation: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number | null>(null);
   const [audioLevel, setAudioLevel] = useState<number>(0);
   const navigate = useNavigate();
   useEffect(() => {
